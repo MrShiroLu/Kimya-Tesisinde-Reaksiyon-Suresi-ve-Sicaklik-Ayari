@@ -1,0 +1,1 @@
+# Kimya-Tesisinde-Reaksiyon-Suresi-ve-Sicaklik-Ayari
