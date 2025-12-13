@@ -1,11 +1,4 @@
-# Senaryo 5: Kimya Tesisinde Reaksiyon Süresi ve Sıcaklık Ayarı Optimizasyonu
-
-## İçindekiler
-- [Ödev Bilgileri](#ödev-bilgileri)
-- [Proje Açıklaması](#proje-açıklaması)
-- [Problem Tanımı](#problem-tanımı)
-- [Notebook İçeriği](#notebook-içeriği)
----
+# Kimya Tesisinde Reaksiyon Süresi ve Sıcaklık Ayarı Optimizasyonu
 
 ## Proje Açıklaması
 
