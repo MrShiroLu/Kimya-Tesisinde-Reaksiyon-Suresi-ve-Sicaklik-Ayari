@@ -5,12 +5,6 @@
 - [Proje Açıklaması](#proje-açıklaması)
 - [Problem Tanımı](#problem-tanımı)
 - [Notebook İçeriği](#notebook-içeriği)
-- [Kullanılan Yöntemler](#kullanılan-yöntemler)
-- [Sonuçlar ve Çıktılar](#sonuçlar-ve-çıktılar)
-- [Teknik Detaylar](#teknik-detaylar)
-- [Sonuç ve Değerlendirme](#sonuç-ve-değerlendirme)
-- [Referanslar](#referanslar)
-
 ---
 
 ## Proje Açıklaması
