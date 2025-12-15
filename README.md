@@ -1,337 +1,483 @@
-# Kimya Tesisinde Reaksiyon Süresi ve Sıcaklık Ayarı Optimizasyonu
+## Proje Amacı
 
-## Proje Açıklaması
-
-Bu proje, kimyasal üretim süreçlerinde **reaksiyon verimi optimizasyonu** için tasarlanmış kapsamlı bir matematiksel optimizasyon çalışmasıdır. 
-
-### Problem Bağlamı
-
-Kimya endüstrisinde, üretim süreçlerinin verimliliği doğrudan reaksiyon parametrelerinin optimizasyonuna bağlıdır. Reaksiyon süresi ve sıcaklık, kimyasal reaksiyonların hızını ve verimini etkileyen iki kritik parametredir. Bu parametrelerin yanlış ayarlanması:
-- Düşük ürün verimi
-- Enerji israfı
-- Zaman kaybı
-- Güvenlik riskleri
-
-gibi sonuçlara yol açabilir.
-
-### Çalışmanın Kapsamı
-
-Bu çalışma, kısıtlı optimizasyon teknikleri kullanarak kimyasal bir tesiste optimal çalışma koşullarının belirlenmesini amaçlamaktadır. İki farklı optimizasyon algoritması (SLSQP ve Differential Evolution) kullanılarak sonuçlar karşılaştırılmış ve en iyi parametreler belirlenmiştir.
-
-### Ana Amaç
-Verilen güvenlik ve operasyonel kısıtlar altında reaksiyon verimini maksimize eden optimal reaksiyon süresi ve sıcaklık değerlerini bulmak ve bu süreçte farklı optimizasyon algoritmalarının performansını karşılaştırmak.
-
----
+Bu proje, kimyasal üretim süreçlerinde **reaksiyon verimi optimizasyonu** için **Genetik Algoritma (GA)** kullanan kapsamlı bir optimizasyon çalışmasıdır. Reaksiyon süresi ve sıcaklık parametrelerini optimize ederek maksimum verim elde etmeyi amaçlamaktadır.
 
 ## Problem Tanımı
 
-### Matematiksel Formülasyon
-
-Bu problem, **kısıtlı nonlineer optimizasyon** problemi olarak modellenmiştir.
-
-#### Amaç Fonksiyonu
+### Amaç Fonksiyonu
 
 Maksimize edilecek reaksiyon verimi fonksiyonu:
 
 ```
-maximize: y = 8x₁ + 3x₂ - x₁x₂ + x₁²
+y = 8x₁ + 3x₂ - x₁x₂ + x₁²
 ```
 
 **Fonksiyon Bileşenleri:**
-- `8x₁`: Reaksiyon süresinin doğrudan katkısı (pozitif etki)
-- `3x₂`: Sıcaklığın doğrudan katkısı (pozitif etki)
-- `-x₁x₂`: Etkileşim terimi (negatif etki - aşırı değerler verimlilik kaybı)
-- `x₁²`: Sürenin quadratik etkisi (uzun süre daha fazla dönüşüm)
+- `8x₁`: Reaksiyon süresinin doğrudan katkısı
+- `3x₂`: Sıcaklığın doğrudan katkısı
+- `-x₁x₂`: Etkileşim terimi (aşırı değerler verimlilik kaybı)
+- `x₁²`: Sürenin kuadratik etkisi
 
-#### Karar Değişkenleri
+### Karar Değişkenleri
 
-- **x₁ (Reaksiyon Süresi)**: 
-  - Birim: Dakika
-  - Aralık: [10, 60]
-  - Fiziksel Anlamı: Reaktörlerde kimyasal reaksiyonun devam ettiği süre
-  
-- **x₂ (Sıcaklık)**:
-  - Birim: Derece Celsius
-  - Aralık: [40, 120]
-  - Fiziksel Anlamı: Reaksiyon ortamının sıcaklığı
+- **x₁**: Reaksiyon Süresi (10-60 dakika)
+- **x₂**: Sıcaklık (40-120 °C)
 
-#### Kısıtlar
+### Kısıtlar
 
-**1. Toplam Süre-Sıcaklık Kısıtı:**
+1. **Güvenlik Kısıtı**: `x₁ + x₂ ≤ 140`
+2. **Minimum Sıcaklık**: `x₂ ≥ 60`
+3. **Sınır Kısıtları**: `10 ≤ x₁ ≤ 60` ve `40 ≤ x₂ ≤ 120`
+
+## Genetik Algoritma Yapısı
+
+### GA Bileşenleri
+
+Proje, klasik genetik algoritma operatörlerini kullanarak optimizasyonu gerçekleştirir:
+
+#### 1. **Kodlama**
+- Gerçek değerli (real-valued) kodlama
+- Her birey: `[x₁, x₂]` şeklinde iki elemanlı vektör
+
+#### 2. **Fitness Fonksiyonu**
+```python
+Fitness = Amaç Fonksiyonu - Ceza Fonksiyonu
 ```
-x₁ + x₂ ≤ 140
-```
-- **Gerekçe**: Yüksek sıcaklık ve uzun sürenin birleşimi güvenlik riski oluşturur
-- **Pratik Anlam**: Reaktör termal kapasitesi ve güvenlik standartları
+Kısıt ihlalleri için ceza mekanizması kullanılır.
 
-**2. Minimum Sıcaklık Kısıtı:**
-```
-x₂ ≥ 60
-```
-- **Gerekçe**: Reaksiyonun başlaması için minimum aktivasyon enerjisi gerekli
-- **Pratik Anlam**: 60°C altında reaksiyon hızı çok düşük
+#### 3. **Seçim Operatörü**
+- **Turnuva Seçimi** kullanılır
+- Turnuva boyutu parametrik olarak ayarlanabilir
+- En iyi fitness değerine sahip birey seçilir
 
-**3. Sınır Kısıtları:**
-```
-10 ≤ x₁ ≤ 60
-40 ≤ x₂ ≤ 120
-```
-- **Gerekçe**: Ekipman kapasitesi, güvenlik ve operasyonel kısıtlar
+#### 4. **Çaprazlama**
+- **BLX-alpha Crossover** yöntemi
+- İki ebeveynden iki çocuk üretilir
+- Alpha parametresi ile keşif-sömürme dengesi sağlanır
 
-### Problem Karakteristiği
+#### 5. **Mutasyon**
+- **Gaussian Mutasyon**
+- Her gen için normal dağılım kullanılarak rastgele değişiklik
+- Mutasyon oranı ile kontrol edilir
 
-- **Tip**: Kısıtlı nonlineer optimizasyon
-- **Değişken Sayısı**: 2
-- **Kısıt Sayısı**: 2 eşitsizlik + 4 sınır kısıtı
-- **Fonksiyon Türü**: Kuadratik (convex olmayan)
-- **Çözüm Uzayı**: 2 boyutlu sürekli alan
+#### 6. **Elitizm**
+- En iyi bireyler bir sonraki nesle aktarılır
+- Bulunan en iyi çözümün kaybolması önlenir
 
----
+## Kod Yapısı
 
-## Notebook İçeriği
-
-### 1. Kütüphane İçe Aktarımı
+### 1. Kütüphaneler
 
 ```python
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.optimize import minimize, differential_evolution
 from mpl_toolkits.mplot3d import Axes3D
 import pandas as pd
 import warnings
-warnings.filterwarnings('ignore')
-
-plt.rcParams['font.family'] = 'DejaVu Sans'
-plt.rcParams['axes.unicode_minus'] = False
+import random
+import time
 ```
 
 **Kullanılan Kütüphaneler:**
-- **NumPy**: Sayısal hesaplamalar ve matris işlemleri için
-- **Matplotlib**: 2D ve 3D görselleştirmeler için
-- **SciPy**: Optimizasyon algoritmaları (minimize, differential_evolution)
-- **Pandas**: Veri analizi ve tablo gösterimleri için
-- **mpl_toolkits**: 3D grafik desteği için
+- `numpy`: Sayısal hesaplamalar
+- `matplotlib`: 2D ve 3D görselleştirmeler
+- `pandas`: Veri analizi ve tablo gösterimleri
+- `random`: Rastgele sayı üretimi
+- `time`: Performans ölçümü
 
-Ayrıca Türkçe karakter desteği ve uyarı mesajlarının bastırılması yapılandırılır.
-
----
-
-### 2. Amaç Fonksiyonlarının Tanımı
-
-#### Ana Fonksiyon: `objective_function(x)`
-
-Reaksiyon verimi fonksiyonunu hesaplar:
+### 2. Problem Parametreleri
 
 ```python
+# Değişken sınırları
+X1_MIN, X1_MAX = 10, 60    # Reaksiyon süresi (dk)
+X2_MIN, X2_MAX = 40, 120   # Sıcaklık (°C)
+
+BOUNDS = [(X1_MIN, X1_MAX), (X2_MIN, X2_MAX)]
+```
+
+### 3. Amaç ve Fitness Fonksiyonları
+
+**Amaç Fonksiyonu:**
+```python
 def objective_function(x):
-    """
-    Reaksiyon verimi fonksiyonu
-    y = 8x1 + 3x2 - x1*x2 + x1^2
-    
-    Parametreler:
-    x[0] = x1 : Reaksiyon süresi (dk)
-    x[1] = x2 : Sıcaklık (derece C)
-    
-    Dönüş:
-    float: Reaksiyon verimi
-    """
     x1, x2 = x[0], x[1]
     return 8*x1 + 3*x2 - x1*x2 + x1**2
 ```
 
-**Fonksiyon Analizi:**
-- **Girdi**: İki elemanlı liste/array [x1, x2]
-- **Çıktı**: Tek sayısal değer (verim)
-- **Özellik**: Nonlineer, quadratik terimler içerir
+**Kısıt Kontrolü:**
+```python
+def check_constraints(x):
+    x1, x2 = x[0], x[1]
+    violations = 0
+    
+    if x1 + x2 > 140:
+        violations += (x1 + x2 - 140)
+    
+    if x2 < 60:
+        violations += (60 - x2)
+    
+    return violations == 0, violations
+```
 
-#### Minimizasyon Adaptörü: `objective_function_minimization(x)`
+**Fitness Fonksiyonu:**
+```python
+def fitness_function(x):
+    obj_value = objective_function(x)
+    penalty = penalty_function(x)
+    return obj_value - penalty
+```
 
-SciPy'nin optimize fonksiyonları minimize etmek üzere tasarlandığından, maksimizasyon problemini minimizasyona dönüştürür:
+### 4. Genetik Algoritma Sınıfı
+
+`GeneticAlgorithm` sınıfı tüm GA operatörlerini içerir:
 
 ```python
-def objective_function_minimization(x):
-    """
-    Maksimizasyonu minimizasyona çevirir
-    minimize -f(x) = maximize f(x)
-    """
-    return -objective_function(x)
+class GeneticAlgorithm:
+    def __init__(self, bounds, pop_size=50, generations=100,
+                 crossover_rate=0.8, mutation_rate=0.1,
+                 tournament_size=3, elitism=2):
+        # Parametreleri ayarla
+        
+    def initialize_population(self):
+        # Rastgele başlangıç popülasyonu oluştur
+        
+    def evaluate_population(self, population):
+        # Fitness değerlerini hesapla
+        
+    def tournament_selection(self, population, fitness_values):
+        # Turnuva seçimi ile ebeveyn seç
+        
+    def crossover(self, parent1, parent2, alpha=0.5):
+        # BLX-alpha çaprazlama
+        
+    def mutate(self, individual, sigma_ratio=0.1):
+        # Gaussian mutasyon
+        
+    def get_elite(self, population, fitness_values):
+        # En iyi elit bireyleri seç
+        
+    def evolve(self, verbose=True):
+        # Ana GA döngüsü
 ```
 
-**Matematiksel Dönüşüm:**
-```
-Orijinal: maximize f(x)
-Dönüştürülmüş: minimize -f(x)
-```
-
-Bu yaklaşım, tüm optimizasyon algoritmalarında standart bir tekniktir.
----
-
-### 3. Kısıtların Tanımlanması
-
-Optimizasyon probleminde iki tip kısıt vardır: sınır kısıtları ve eşitsizlik kısıtları.
-
-#### Sınır Kısıtları (Bounds)
+### 5. Optimizasyon Parametreleri
 
 ```python
-bounds = [
-    (10, 60),   # x1: Reaksiyon süresi (dk)
-    (40, 120)   # x2: Sıcaklık (derece C)
-]
-```
-**Açıklama:**
-- Her değişken için (min, max) tuple formatında tanımlanır
-- Bu kısıtlar "box constraints" olarak da bilinir
-- Fiziksel ve operasyonel limitlerden kaynaklanır
-
-#### Eşitsizlik Kısıtları (Inequality Constraints)
-
-```python
-constraints = [
-    {'type': 'ineq', 'fun': lambda x: 140 - x[0] - x[1]},  # x1 + x2 ≤ 140
-    {'type': 'ineq', 'fun': lambda x: x[1] - 60}           # x2 ≥ 60
-]
-```
-**SciPy Kısıt Formatı:**
-- `'type': 'ineq'`: Eşitsizlik kısıtı
-- `'fun'`: Kısıt fonksiyonu (≥ 0 formatında olmalı)
-
-**Matematiksel Dönüşüm:**
-```
-Orijinal: x1 + x2 ≤ 140
-SciPy için: 140 - x1 - x2 ≥ 0
-
-Orijinal: x2 ≥ 60
-SciPy için: x2 - 60 ≥ 0
+GA_PARAMS = {
+    'pop_size': 100,        # Popülasyon büyüklüğü
+    'generations': 150,     # Nesil sayısı
+    'crossover_rate': 0.85, # Çaprazlama oranı
+    'mutation_rate': 0.15,  # Mutasyon oranı
+    'tournament_size': 5,   # Turnuva boyutu
+    'elitism': 3            # Elit birey sayısı
+}
 ```
 
-**Kısıt Sınırları:**
-- **Birinci kısıt**: Güvenlik limiti - toplam "yük" 140'ı geçmemeli
-- **İkinci kısıt**: Aktivasyon eşiği - minimum reaksiyon sıcaklığı
+## Sonuçlar ve Görselleştirmeler
 
-**Fizibilite Bölgesi:**
-Tüm kısıtları sağlayan (x1, x2) noktalarının oluşturduğu alan 2D uzayda bir poligondur.
+### 1. Yakınsama Grafikleri
 
----
+Genetik algoritmanın nesiller boyunca nasıl iyileştiğini gösteren grafikler:
 
-### 4. **Optimizasyon Yöntemleri**
+![Fitness Yakınsama Grafikleri](Img/FitnessYakinsaaGrafigi.png)
+*Sol: En iyi fitness değerinin nesillere göre değişimi | Sağ: Popülasyondaki en iyi ve ortalama fitness karşılaştırması*
 
-#### 4.1. SLSQP (Sequential Least Squares Programming)
+![Popülasyon Fitness Karşılaştırması](Img/PopulasyonFitnessKarsilastirmasi.png)
+*Popülasyondaki en iyi ve ortalama fitness değerlerinin nesillere göre değişimi*
+
+**Gözlemler:**
+- Algoritma ilk 30-40 nesilden sonra hızlı yakınsar
+- Popülasyon çeşitliliği sayesinde erken yakınsamadan kaçınılır
+- Elitizm sayesinde en iyi çözüm korunur
+
+### 2. 3D Verim Yüzey Grafiği
+
+Reaksiyon verimi fonksiyonunun 3 boyutlu görselleştirmesi:
+
+![Verim Yüzey Grafiği](Img/VerimYuzeyGrafigi.png)
+*3D yüzey grafiği, kısıt ihlali yapan bölgeler maskelenmiştir*
 
 **Özellikler:**
-- Gradient tabanlı yerel optimizasyon algoritması
-- Kısıtlı optimizasyon problemleri için etkili
-- Hızlı yakınsama
-- Başlangıç noktasına duyarlı
+- Kırmızı yıldız: Optimal nokta
+- Kısıt dışı bölgeler gösterilmez
+- Verim değerleri renk skalası ile kodlanmıştır
 
-**Kullanım:**
-```python
-result_slsqp = minimize(
-    objective_function_minimization,
-    x0=[35, 80],  # Başlangıç noktası
-    method='SLSQP',
-    bounds=bounds,
-    constraints=constraints
-)
-```
-#### 4.2. Differential Evolution
+### 3. Kontur Grafiği ve Kısıtlar
 
-**Özellikler:**
-- Genetik algoritma tabanlı global optimizasyon
-- Başlangıç noktasına duyarsız
-- Global optimumu bulma olasılığı yüksek
-- Daha fazla hesaplama süresi gerektirir
+2D kontur grafiği ile fizibil bölgenin görselleştirilmesi:
 
-**Kullanım:**
-```python
-result_de = differential_evolution(
-    objective_with_penalty,
-    bounds,
-    seed=42,
-    maxiter=1000
-)
-```
-**Penalty Yaklaşımı:**
-Kısıt ihlallerini büyük ceza değerleriyle fonksiyona ekler:
-```python
-def constraint_penalty(x):
-    penalty = 0
-    if x[0] + x[1] > 140:
-        penalty += 1e6 * (x[0] + x[1] - 140)
-    if x[1] < 60:
-        penalty += 1e6 * (60 - x[1])
-    return penalty
-```
----
+![Kontur Grafiği ve Kısıtlar](Img/KonturGrafigiVeKisitlar.png)
+*Kontur çizgileri, kısıt sınırları ve optimal nokta*
 
-### 5. **Sonuç Karşılaştırması**
+**Gösterilen Unsurlar:**
+- Kırmızı kesikli çizgi: `x₁ + x₂ = 140` kısıtı
+- Turuncu kesikli çizgi: `x₂ = 60` kısıtı
+- Yeşil alan: Fizibil bölge
+- Kırmızı yıldız: GA ile bulunan optimal nokta
 
-Her iki yöntemin sonuçları karşılaştırılır ve en iyi sonuç seçilir:
+### 4. Kesit Grafikleri
 
-```python
-best_result = result_slsqp if -result_slsqp.fun > -result_de.fun else result_de
-```
-Pandas DataFrame kullanılarak görsel bir karşılaştırma tablosu oluşturulur.
-
----
-
-### 6. **Görselleştirmeler**
-
-#### 6.1. 3D Yüzey Grafiği
-Amaç fonksiyonunun 3 boyutlu görselleştirmesi:
-- **X ekseni**: Reaksiyon süresi (x1)
-- **Y ekseni**: Sıcaklık (x2)
-- **Z ekseni**: Verim
-- Kısıt ihlali yapan bölgeler maskelenir
-
-```python
-mask = (X1 + X2 > 140) | (X2 < 60)
-Y_masked = np.ma.array(Y, mask=mask)
-```
-#### 6.2. Kontur Grafiği
-- 2D kontour plot ile verim düzeyleri
-- Kısıt çizgileri (x1 + x2 = 140 ve x2 = 60)
-- Optimal nokta işaretlemesi
-
-#### 6.3. Kesit Grafikleri
 Bir değişken sabit tutulurken diğerinin etkisi:
-- x2 sabit → x1 değişimi
-- x1 sabit → x2 değişimi
 
----
+![Kesit Grafikleri](Img/KesitGrafikleri.png)
+*Sol: x₂ sabit, x₁ değişiyor | Sağ: x₁ sabit, x₂ değişiyor*
 
-### 7. **Duyarlılık Analizi**
+Bu grafikler, her bir parametrenin verimi nasıl etkilediğini ayrı ayrı gösterir.
 
-Optimal noktanın ±10 birim çevresinde parametrelerin etkisi incelenir:
+### 5. Duyarlılık Analizi
 
-**Analiz Edilen Durumlar:**
-- x1'de +5 dk artış/azalış
-- x2'de +5 derece C artış/azalış
+Optimal noktanın çevresinde parametrelerin etkisi:
 
-**Çıktı:** Yüzdesel verim değişimi
+![x₁ Duyarlılık Analizi](Img/x1DuyarlilikAnalizi.png)
+*Reaksiyon süresi (x₁) değişiminin verime etkisi*
+
+![x₂ Duyarlılık Analizi](Img/x2DuyarlilikAnalizi.png)
+*Sıcaklık (x₂) değişiminin verime etkisi*
+
+**Duyarlılık Sonuçları:**
+- x₁'de ±5 dk sapma: Verimde orta düzeyde değişim
+- x₂'de ±5 °C sapma: Verimde daha fazla değişim
+- Sıcaklık kontrolü daha kritiktir
+
+### 6. Parametre Ayarlarına Göre Performans
+
+Farklı GA parametrelerinin sonuçlara etkisi:
+
+![Parametre Ayarlarına Göre Verim](Img/ParametreAyarlarinaGoreVerim.png)
+*Farklı parametre kombinasyonlarıyla elde edilen verim değerleri*
+
+![Parametre Ayarlarına Göre Süre](Img/ParametreAyaklarinaGoreSure.png)
+*Farklı parametre kombinasyonlarının çalışma süreleri*
+
+**Parametre Analizi:**
+- Yüksek popülasyon → Daha iyi sonuç, daha uzun süre
+- Yüksek mutasyon → Daha fazla keşif
+- Uzun nesil → Daha iyi yakınsama
+
+## Kullanım
+
+### Gereksinimler
 
 ```python
-change_percent = ((new_yield - optimal_yield) / optimal_yield) * 100
+numpy
+matplotlib
+pandas
+scipy (opsiyonel - karşılaştırma için)
 ```
----
 
-### 8. **Çözüm Doğrulaması**
+### Kurulum
 
-Bulunan optimumun güvenilirliğini test etmek için:
-- 20 farklı rastgele başlangıç noktası
-- Her noktadan SLSQP ile optimizasyon
-- Sonuçların istatistiksel analizi (ortalama, std, min, max)
-- Histogram grafikleri ile dağılım görselleştirmesi
+```bash
+pip install numpy matplotlib pandas scipy
+```
 
----
+### Çalıştırma
 
-### 9. **Pratik Öneriler ve Rapor**
+```python
+# Notebook'u çalıştırın
+jupyter notebook Kimya_Tesisinde_Reaksiyon_Suresi_ve_Sicaklik_Ayari.ipynb
+```
 
-Kimya tesisi operatörleri için pratik öneriler içeren detaylı rapor:
+veya
 
-1. **Optimal Çalışma Koşulları**: En iyi x1 ve x2 değerleri
-2. **Kısıt Durumu**: Tüm kısıtların sağlandığının doğrulanması
-3. **Pratik Öneriler**: Tolerans aralıkları ve operasyonel tavsiyeler
-4. **Risk Analizi**: Duyarlılık seviyesi ve kritik parametreler
-5. **Ekonomik Değerlendirme**: Verim, süre ve enerji maliyeti
+```bash
+# Tüm hücreleri sırayla çalıştırın
+```
 
----
+### Özelleştirme
+
+#### GA Parametrelerini Değiştirme:
+
+```python
+GA_PARAMS = {
+    'pop_size': 100,        # Popülasyon büyüklüğü
+    'generations': 150,     # Nesil sayısı
+    'crossover_rate': 0.85, # Çaprazlama oranı (0-1)
+    'mutation_rate': 0.15,  # Mutasyon oranı (0-1)
+    'tournament_size': 5,   # Turnuva boyutu
+    'elitism': 3            # Elit birey sayısı
+}
+```
+
+#### Problem Parametrelerini Değiştirme:
+
+```python
+# Değişken sınırlarını değiştir
+X1_MIN, X1_MAX = 10, 60
+X2_MIN, X2_MAX = 40, 120
+
+# Amaç fonksiyonunu değiştir
+def objective_function(x):
+    x1, x2 = x[0], x[1]
+    # Yeni fonksiyonu tanımla
+    return ...
+```
+
+## Algoritma Akışı
+
+```
+1. Başlangıç
+   ├── Rastgele popülasyon oluştur (pop_size birey)
+   └── Fitness değerlerini hesapla
+
+2. Nesil Döngüsü (generations kez)
+   ├── Elit bireyleri seç ve koru (elitism)
+   ├── Yeni nesil oluştur:
+   │   ├── Turnuva seçimi ile ebeveyn seç
+   │   ├── Çaprazlama uygula (crossover_rate oranında)
+   │   ├── Mutasyon uygula (mutation_rate oranında)
+   │   └── Çocukları popülasyona ekle
+   ├── Fitness değerlerini hesapla
+   ├── En iyi çözümü güncelle
+   └── İlerleme raporla
+
+3. Sonuç
+   ├── En iyi çözümü döndür
+   ├── Yakınsama grafiğini göster
+   └── Sonuç raporunu yazdır
+```
+
+## Kod Modülleri
+
+### 1. Problem Tanımı Modülü
+- `objective_function()`: Amaç fonksiyonu
+- `check_constraints()`: Kısıt kontrolü
+- `penalty_function()`: Ceza hesaplama
+- `fitness_function()`: Fitness değeri
+
+### 2. Genetik Algoritma Modülü
+- `GeneticAlgorithm` sınıfı
+  - `initialize_population()`: Başlangıç popülasyonu
+  - `evaluate_population()`: Fitness hesaplama
+  - `tournament_selection()`: Seçim operatörü
+  - `crossover()`: Çaprazlama operatörü
+  - `mutate()`: Mutasyon operatörü
+  - `get_elite()`: Elitizm
+  - `evolve()`: Ana döngü
+
+### 3. Görselleştirme Modülü
+- Yakınsama grafikleri
+- 3D yüzey grafiği
+- Kontur grafiği
+- Kesit grafikleri
+- Duyarlılık analizi grafikleri
+- Parametre karşılaştırma grafikleri
+
+### 4. Analiz Modülü
+- Duyarlılık analizi
+- Parametre analizi
+- Çözüm doğrulama
+- Sonuç raporu
+
+## Çıktılar
+
+### Optimal Çözüm
+
+Program aşağıdaki formatta sonuçları yazdırır:
+
+```
+======================================================
+GENETİK ALGORİTMA SONUÇLARI
+======================================================
+
+Optimal Çözüm:
+  x1 (Reaksiyon süresi): XX.XX dk
+  x2 (Sıcaklık): XX.XX °C
+
+Maksimum Verim: XXX.XX
+
+Kısıt Kontrolü:
+  x1 + x2 = XXX.XX (<=140? EVET)
+  x2 = XX.XX (>=60? EVET)
+  Çözüm Fizibil mi: EVET
+
+Performans:
+  Çalışma Süresi: X.XXX saniye
+  Toplam Nesil: 150
+  Toplam Birey Değerlendirmesi: 15000
+======================================================
+```
+
+### Görsel Çıktılar
+
+1. **Yakınsama grafikleri** - Algoritmanın iyileşme süreci
+2. **3D yüzey ve kontur grafikleri** - Amaç fonksiyonunun görselleştirilmesi
+3. **Kesit grafikleri** - Her parametrenin bireysel etkisi
+4. **Duyarlılık grafikleri** - Optimal noktanın stabilitesi
+5. **Parametre karşılaştırma grafikleri** - Farklı ayarların performansı
+
+## Öğrenme Hedefleri
+
+Bu proje aşağıdaki konuları kapsar:
+
+1. **Genetik Algoritma**
+   - GA operatörlerinin implementasyonu
+   - Parametre ayarlama
+   - Yakınsama analizi
+
+2. **Kısıtlı Optimizasyon**
+   - Ceza fonksiyonu yaklaşımı
+   - Fizibilite kontrolü
+   - Kısıt işleme teknikleri
+
+3. **Python Programlama**
+   - Nesne yönelimli programlama
+   - NumPy kullanımı
+   - Veri görselleştirme
+
+4. **Kimya Mühendisliği**
+   - Reaksiyon optimizasyonu
+   - Proses parametreleri
+   - Güvenlik kısıtları
+
+## Pratik Öneriler
+
+### Operasyon İçin Tavsiyeler
+
+1. **Reaksiyon Süresi**: Optimal değerden ±2 dakika sapma kabul edilebilir
+2. **Sıcaklık Kontrolü**: ±3°C tolerans ile hassas kontrol gereklidir
+3. **Güvenlik**: `x₁ + x₂ < 140` koşulu her durumda sağlanmalıdır
+4. **İzleme**: Süreç parametreleri periyodik olarak kontrol edilmelidir
+
+### Algoritma İyileştirmeleri
+
+1. **Adaptif Parametreler**: Mutasyon ve çaprazlama oranları nesillere göre azaltılabilir
+2. **Hibrit Yaklaşım**: GA ile yerel arama algoritması birleştirilebilir
+3. **Paralel İşleme**: Popülasyon değerlendirmesi paralelleştirilebilir
+4. **Çok Amaçlı**: Verim yanında maliyet de optimize edilebilir
+
+## Teknik Detaylar
+
+### Hesaplama Karmaşıklığı
+
+- **Zaman Karmaşıklığı**: O(pop_size × generations × n_vars)
+- **Uzay Karmaşıklığı**: O(pop_size × n_vars)
+
+### Performans İstatistikleri
+
+Tipik çalışma süresi:
+- Popülasyon: 100 birey
+- Nesil: 150
+- Toplam değerlendirme: 15,000
+- Süre: ~5-10 saniye
+
+### Yakınsama Kriteri
+
+Algoritma şu durumlarda yakınsamış sayılır:
+- Fitness değişimi < %1 (son 20 nesilde)
+- veya maksimum nesil sayısına ulaşıldı
+
+## Doğrulama ve Test
+
+### Çözüm Doğrulama
+
+1. Kısıt kontrolü yapılır
+2. Farklı başlangıç noktalarından test edilir
+3. Sonuçların tutarlılığı kontrol edilir
+
+### Test Senaryoları
+
+- Farklı rastgele tohumlar (seed)
+- Farklı başlangıç popülasyonları
+- Farklı parametre setleri
+- Karşılaştırmalı testler (farklı algoritmalarla)
